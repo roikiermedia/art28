@@ -70,9 +70,50 @@ void setup() {
 
   // set master brightness control
   FastLED.setBrightness(BRIGHTNESS);
+
+  artnet.begin();
+  // this will be called for each packet received
+  artnet.setArtDmxCallback(onDmxFrame);
 }
 
 void loop() {
+  artnet.read();
+}
+
+void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* data) {
+  sendFrame = 1;
+  // set brightness of the whole strip 
+  if (universe == 15) {
+    FastLED.setBrightness(data[0]);
+  }
+
+  // Store which universe has got in
+  if ((universe - startUniverse) < maxUniverses) {
+    universesReceived[universe - startUniverse] = 1;
+  }
+
+  for (int i = 0 ; i < maxUniverses ; i++) {
+    if (universesReceived[i] == 0) {
+      //Serial.println("Broke");
+      sendFrame = 0;
+      break;
+    }
+  }
+
+  // read universe and put into the right part of the display buffer
+  for (int i = 0; i < length / 3; i++) {
+    int led = i + (universe - startUniverse) * (previousDataLength / 3);
+    if (led < NUM_LEDS) {
+      leds[i] = CRGB(data[i * 3], data[i * 3 + 1], data[i * 3 + 2]);
+    }
+  }
+  previousDataLength = length;
+  
+  if (sendFrame) {
+    FastLED.show();
+    // Reset universeReceived to 0
+    memset(universesReceived, 0, maxUniverses);
+  }
 }
 
 
