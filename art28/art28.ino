@@ -6,6 +6,8 @@
 #include <WiFiUdp.h>
 #include <ArtnetWifi.h>
 #include <FastLED.h>
+#include <Wire.h>  // Only needed for Arduino 1.6.5 and earlier
+#include "SSD1306.h" // alias for `#include "SSD1306Wire.h"`
 
 #define DATA_PIN    6
 //#define CLK_PIN   4
@@ -14,7 +16,7 @@
 #define NUM_LEDS    170
 CRGB leds[NUM_LEDS];
 
-#define BRIGHTNESS          96
+#define BRIGHTNESS          127
 #define FRAMES_PER_SECOND   60
 
 //Wifi settings
@@ -31,6 +33,9 @@ const int maxUniverses = numberOfChannels / 512 + ((numberOfChannels % 512) ? 1 
 bool universesReceived[maxUniverses];
 bool sendFrame = 1;
 int previousDataLength = 0;
+
+// Initialize the OLED display using Wire library (adress, SDA, SCL)
+SSD1306  display(0x3c, D1, D2);
 
 void setup() {
   delay(3000); // 3 second delay for recovery
@@ -55,6 +60,20 @@ void setup() {
 
   Serial.print("Connected, IP address: ");
   Serial.println(WiFi.localIP());
+
+  // Initialising the UI will init the display too.
+  display.init();
+  display.flipScreenVertically();
+  display.setFont(ArialMT_Plain_16);
+  display.setTextAlignment(TEXT_ALIGN_CENTER);
+  display.setFont(ArialMT_Plain_10);
+  display.drawString(64, 0, "ArtNet:");
+  display.setFont(ArialMT_Plain_16);
+  display.drawString(64, 17, IpAddressToString(WiFi.localIP()) );
+  display.setFont(ArialMT_Plain_10);
+  display.drawString(64, 35, WiFi.SSID() );
+  display.drawString(64, 52, "ctfl.space/art28");
+  display.display();
 
   // run green pixels on strip as a visual connection confirmation
   for (int i=0; i<=NUM_LEDS*1.5; i++) {
@@ -126,3 +145,12 @@ void runner(CRGB clr) {
   leds[pos] += clr;
 }
 
+// Helper functions
+
+String IpAddressToString(const IPAddress& ipAddress)
+{
+  return String(ipAddress[0]) + String(".") +\
+  String(ipAddress[1]) + String(".") +\
+  String(ipAddress[2]) + String(".") +\
+  String(ipAddress[3])  ; 
+}
