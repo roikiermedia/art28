@@ -1,3 +1,13 @@
+//
+//                    _    ___    ___  
+//       /\          | |  |__ \  / _ \ 
+//      /  \    _ __ | |_    ) || (_) |
+//     / /\ \  | '__|| __|  / /  > _ < 
+//    / ____ \ | |   | |_  / /_ | (_) |
+//   /_/    \_\|_|    \__||____| \___/ 
+//
+//  opensource artnet reciever for ws2812b on esp8266 & esp32 
+
 #if defined(ARDUINO_ARCH_ESP32)
 #include <WiFi.h>
 #else
@@ -8,6 +18,10 @@
 #include <FastLED.h>
 #include <Wire.h>  // Only needed for Arduino 1.6.5 and earlier
 #include "SSD1306.h" // alias for `#include "SSD1306Wire.h"`
+
+/******************************************************************************/
+// CONFIGURATION
+/******************************************************************************/
 
 #define DATA_PIN    6
 //#define CLK_PIN   4
@@ -23,6 +37,12 @@ CRGB leds[NUM_LEDS];
 const char* NETWORK_NAME = "Chaostreff-Flensburg";
 const char* NETWORK_PASSWORD = "Schnell33";
 
+// Initialize the OLED display using Wire library (adress, SDA, SCL)
+SSD1306  display(0x3c, D1, D2);
+
+/******************************************************************************/
+/******************************************************************************/
+
 // Artnet settings
 ArtnetWifi artnet;
 const int startUniverse = 0; // CHANGE FOR YOUR SETUP most software this is 1, some software send out artnet first universe as 0.
@@ -33,9 +53,6 @@ const int maxUniverses = numberOfChannels / 512 + ((numberOfChannels % 512) ? 1 
 bool universesReceived[maxUniverses];
 bool sendFrame = 1;
 int previousDataLength = 0;
-
-// Initialize the OLED display using Wire library (adress, SDA, SCL)
-SSD1306  display(0x3c, D1, D2);
 
 void setup() {
   delay(1000); // 1 second delay for recovery
