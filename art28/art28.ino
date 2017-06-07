@@ -30,7 +30,7 @@
 #define NUM_LEDS    170
 CRGB leds[NUM_LEDS];
 
-#define BRIGHTNESS          127
+#define BRIGHTNESS          255
 #define FRAMES_PER_SECOND   60
 
 //Wifi settings
@@ -66,6 +66,16 @@ void setup() {
   
   WiFi.begin(NETWORK_NAME, NETWORK_PASSWORD);
 
+  // Initialising the UI will init the display too.
+  display.init();
+  display.flipScreenVertically();
+  display.setFont(ArialMT_Plain_10);
+  display.setTextAlignment(TEXT_ALIGN_CENTER);
+  display.drawString(64, 22, "Connecting to Network:");
+  display.setFont(ArialMT_Plain_10);
+  display.drawString(64, 34, NETWORK_NAME);
+  display.display();
+
   Serial.print("Connecting");
   while (WiFi.status() != WL_CONNECTED) {
     FastLED.delay(1000/FRAMES_PER_SECOND);
@@ -78,9 +88,7 @@ void setup() {
   Serial.print("Connected, IP address: ");
   Serial.println(WiFi.localIP());
 
-  // Initialising the UI will init the display too.
-  display.init();
-  display.flipScreenVertically();
+  display.clear();
   display.setFont(ArialMT_Plain_16);
   display.setTextAlignment(TEXT_ALIGN_CENTER);
   display.setFont(ArialMT_Plain_10);
