@@ -38,7 +38,7 @@ int previousDataLength = 0;
 SSD1306  display(0x3c, D1, D2);
 
 void setup() {
-  delay(3000); // 3 second delay for recovery
+  delay(1000); // 1 second delay for recovery
 
   Serial.begin(115200);
   Serial.println();
