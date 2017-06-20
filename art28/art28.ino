@@ -65,6 +65,7 @@ void setup() {
   //FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   
   WiFi.begin(NETWORK_NAME, NETWORK_PASSWORD);
+  WiFi.mode(WIFI_STA);
 
   // Initialising the UI will init the display too.
   display.init();
