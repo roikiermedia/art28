@@ -12,7 +12,8 @@
 #include <WiFi.h>
 #else
 #include <ESP8266WiFi.h>
-#endif 
+#include <ESP8266HTTPClient.h>
+#endif
 #include <WiFiUdp.h>
 #include <ArtnetWifi.h>
 #include <FastLED.h>
@@ -23,30 +24,36 @@
 // CONFIGURATION
 /******************************************************************************/
 
+// FastLED Configuration
 #define DATA_PIN    6
 //#define CLK_PIN   4
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
-#define NUM_LEDS    170
+#define NUM_LEDS    84
 CRGB leds[NUM_LEDS];
 
 #define BRIGHTNESS          255
 #define FRAMES_PER_SECOND   60
 
-//Wifi settings
+// Wifi settings
 const char* NETWORK_NAME = "Chaostreff-Flensburg";
 const char* NETWORK_PASSWORD = "Schnell33";
 
+// Discovery-Server settings
+const boolean DISCOVERY_ENABLED = true;
+const char* DISCOVERY_ENDPOINT = "http://192.168.0.80:2015/api/nodes/new";
+
 // Initialize the OLED display using Wire library (adress, SDA, SCL)
 SSD1306  display(0x3c, D1, D2);
-
-/******************************************************************************/
-/******************************************************************************/
 
 // Artnet settings
 ArtnetWifi artnet;
 const int startUniverse = 0; // CHANGE FOR YOUR SETUP most software this is 1, some software send out artnet first universe as 0.
 const int numberOfChannels = NUM_LEDS * 3; // Total number of channels you want to receive (1 led = 3 channels)
+
+/******************************************************************************/
+// CONFIGURATION END
+/******************************************************************************/
 
 // Check if we got all universes
 const int maxUniverses = numberOfChannels / 512 + ((numberOfChannels % 512) ? 1 : 0);
@@ -63,7 +70,7 @@ void setup() {
   // tell FastLED about the LED strip configuration
   FastLED.addLeds<LED_TYPE,DATA_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   //FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-  
+
   WiFi.begin(NETWORK_NAME, NETWORK_PASSWORD);
   WiFi.mode(WIFI_STA);
 
@@ -82,7 +89,7 @@ void setup() {
     FastLED.delay(1000/FRAMES_PER_SECOND);
     Serial.print(".");
     runner(0x00FFFF); // run blue pixels up and down the strip while connecting
-    FastLED.show();  
+    FastLED.show();
   }
   Serial.println();
 
@@ -100,6 +107,16 @@ void setup() {
   display.drawString(64, 35, WiFi.SSID() );
   display.drawString(64, 52, "ctfl.space/art28");
   display.display();
+
+  if (DISCOVERY_ENABLED) {
+    HTTPClient http;
+    http.begin(DISCOVERY_ENDPOINT);
+    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+    String post = "ssid=" + String(NETWORK_NAME) + "&ip=" + IpAddressToString(WiFi.localIP()) + "&mac=" + WiFi.macAddress();
+    http.POST(post);
+    http.writeToStream(&Serial);
+    http.end();
+  }
 
   // run green pixels on strip as a visual connection confirmation
   for (int i=0; i<=NUM_LEDS*1.5; i++) {
@@ -127,7 +144,7 @@ void loop() {
 
 void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* data) {
   sendFrame = 1;
-  // set brightness of the whole strip 
+  // set brightness of the whole strip
   if (universe == 15) {
     FastLED.setBrightness(data[0]);
   }
@@ -153,7 +170,7 @@ void onDmxFrame(uint16_t universe, uint16_t length, uint8_t sequence, uint8_t* d
     }
   }
   previousDataLength = length;
-  
+
   if (sendFrame) {
     FastLED.show();
     // Reset universeReceived to 0
@@ -178,5 +195,5 @@ String IpAddressToString(const IPAddress& ipAddress)
   return String(ipAddress[0]) + String(".") +\
   String(ipAddress[1]) + String(".") +\
   String(ipAddress[2]) + String(".") +\
-  String(ipAddress[3])  ; 
+  String(ipAddress[3])  ;
 }
